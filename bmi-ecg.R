@@ -84,7 +84,7 @@ rm(heig)
 
 # WBFM  WBLM and weight
 # Load Neale reference set to merge RSIDs to Neale files
-refgen<-fread("/Volumes/MADDY2/mrdata/ukbrefsmall.csv")
+refgen<-fread("/Volumes/MADDY2/mrdata/ukbrefsmall.csv") # link = https://broad-ukb-sumstats-us-east-1.s3.amazonaws.com/round2/annotations/variants.tsv.bgz
 refgen$SNP<-refgen$rsid
 refgen<-refgen[,c("variant", "SNP")]
 
@@ -174,7 +174,8 @@ rm(list=ls())
 # Download file from: 
 # # PR http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST008001-GCST009000/GCST008042/
 # # QRS: http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST008001-GCST009000/GCST008054/
-# # QT: http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST008001-GCST009000/GCST008043/
+# # QT: https://personal.broadinstitute.org/ryank/Nauffal_2022_QT_GWAS_SAIGE.zip 
+
 print <- as.data.frame(fread("~/Downloads/pr_interval.combined.page.out"))
 print$SNP<-print$rsid
 setnames(print, old=c("rsid", "Effect-allele", "Other-allele", "Beta", "SE", "P-val", "Chr", "Position_hg19","Effect-allele-frequency", "Sample-size"),
@@ -183,14 +184,6 @@ print<-print[, c("SNP", "print_ea", "print_nea", "print_beta", "print_se", "prin
 write.table(print, "out/print-woj.tsv", sep = "\t",quote = FALSE, col.names = TRUE,row.names = FALSE)
 unlink("~/Downloads/pr_interval.combined.page.out")
 rm(print)
-
-qtint <- as.data.frame(fread("~/Downloads/qt_interval.combined.page.out"))
-setnames(qtint, old=c("rsid", "Effect-allele", "Other-allele", "Beta", "SE", "P-val", "Chr", "Position_hg19","Effect-allele-frequency", "Sample-size"),
-         new=c("SNP", "qtint_ea", "qtint_nea", "qtint_beta", "qtint_se", "qtint_p", "chr", "pos","qtint_eaf", "qtint_ss"))
-qtint<-qtint[, c("SNP", "qtint_ea", "qtint_nea", "qtint_beta", "qtint_se", "qtint_p", "chr", "pos","qtint_eaf", "qtint_ss")]
-write.table(qtint, "out/qtint-woj.tsv", sep = "\t",quote = FALSE, col.names = TRUE,row.names = FALSE)
-unlink("~/Downloads/qt_interval.combined.page.out")
-rm(qtint)
 
 qrsint <- as.data.frame(fread("~/Downloads/qrs_interval.combined.page.out"))
 setnames(qrsint, old=c("rsid", "Effect-allele", "Other-allele", "Beta", "SE", "P-val", "Chr", "Position_hg19","Effect-allele-frequency", "Sample-size"),
@@ -206,16 +199,8 @@ setnames(pwd, old=c("MarkerName", "Allele1", "Allele2", "Effect", "StdErr", "P.v
 pwd<-pwd[, c("SNP", "pwd_ea", "pwd_nea", "pwd_beta", "pwd_se", "pwd_p", "chr", "pos")]
 write.table(pwd, "out/pwd-chris.tsv", sep = "\t",quote = FALSE, col.names = TRUE,row.names = FALSE)
 rm(pwd)
-
-pwtforce <- as.data.frame(fread("http://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST004001-GCST005000/GCST004824/Ptforce_GWAS_ALL_maf0.01.txt.gz"))
-setnames(pwtforce, old=c("MarkerName", "Allele1", "Allele2", "Effect", "StdErr", "P.value", "chr", "pos"),
-         new=c("SNP", "pwtforce_ea", "pwtforce_nea", "pwtforce_beta", "pwtforce_se", "pwtforce_p", "chr", "pos"))
-pwtforce<-pwtforce[, c("SNP", "pwtforce_ea", "pwtforce_nea", "pwtforce_beta", "pwtforce_se", "pwtforce_p", "chr", "pos")]
-write.table(pwtforce, "out/pwtforce-chris.tsv", sep = "\t",quote = FALSE, col.names = TRUE,row.names = FALSE)
-rm(pwtforce)
-
-
-# qtc nuffal download at: https://personal.broadinstitute.org/ryank/Nauffal_2022_QT_GWAS_SAIGE.zip 
+                       
+# qtc nuffal
 qtcint <- as.data.frame(fread("~/Downloads/Nauffal_2022_QT_GWAS_SAIGE/ukb_qtc_gwas_summary_statistics_final.txt"))
 setnames(qtcint, old=c("ID_37", "Effect_allele", "Other_allele", "Beta", "SE", "P-value", "Chromosome", "Position_b37"),
          new=c("Markername", "qtcint_ea", "qtcint_nea", "qtcint_beta", "qtcint_se", "qtcint_p", "chr", "pos"))
@@ -359,20 +344,7 @@ exposuredat<-format_data(exposuredata,type="exposure",snp_col = "SNP",
                          samplesize_col = "weigh_ss")
 weigh_har<-harmonise_data(exposuredat, outcomedat, action = 2)
 weigh_har<-weigh_har[which(weigh_har$mr_keep==TRUE),]
-
-
 rm(exposuredat,exposuredata,outcomedat,outcomedata)
-
-
-# Delete rows with NAs frorm each IV list
-genelist<- gsub("_iv","_har", genelist, fixed = TRUE) #make list with names of all harmonised sets
-# 
-# nas<-function(dat){
-#   dat <- get(dat, envir = .GlobalEnv)
-#   dat<-na.omit(dat)
-# }
-# iv_list<- sapply(genelist, nas, simplify = FALSE)
-# invisible(lapply(names(iv_list), function(x) assign(x,iv_list[[x]],envir=.GlobalEnv)))
 
 # Clump
 clp<-function(dat){
@@ -482,9 +454,6 @@ mrfunc2<-function(dat) {
 }
 
 mr_table2 <- t(data.frame((sapply(genelist,mrfunc2))))
-# mr_table2$or<-exp(mr_table2$coef)
-# mr_table2$lci<-exp((mr_table2$coef)-((mr_table2$se)*1.96))
-# mr_table2$uci<-exp((mr_table2$coef)+((mr_table2$se)*1.96))
 write.csv(mr_table2, '~/Desktop/bmi-ecg/res/print_results2_fixed.csv')
 
 # Sentitivity analyses 
@@ -510,7 +479,7 @@ rm(list=ls())
 
 
 
-#####  OUTCOME 3 = qrsinterval #### 
+#####  OUTCOME 2 = qrsinterval #### 
 #load exposures -  all CSVs from IV folder 
 setwd("~/Desktop/bmi-ecg/ivs")    #set wd to where i want to read IV sets from 
 files = list.files(pattern="*.csv")   #make list of all csv names
@@ -542,15 +511,14 @@ data <- data[!duplicated(data$SNP),]
 head(data)
 
 # Separate 'data' file into exposure and outcome sets, and format respective dataframes for MR
-outcomedata<-data[,c("SNP", "qrsint_ea", "qrsint_nea", "qrsint_beta", "qrsint_se", "qrsint_p", "bmi_chr", "bmi_pos","qrsint_eaf", "qrsint_ss")]
+outcomedata<-data[,c("SNP", "qrsint_ea", "qrsint_nea", "qrsint_beta", "qrsint_se", "qrsint_p","qrsint_eaf", "qrsint_ss")]
 outcomedat<-format_data(outcomedata,type="outcome",snp_col = "SNP",
                         beta_col = "qrsint_beta",
                         se_col = "qrsint_se",
                         eaf_col = "qrsint_eaf",
                         effect_allele_col = "qrsint_ea",
                         other_allele_col = "qrsint_nea",
-                        pos_col	="bmi_pos",
-                        chr_col="bmi_chr",pval_col = "qrsint_p", 
+                        pval_col = "qrsint_p", 
                         samplesize_col = "qrsint_ss")
 
 # BMI
@@ -758,9 +726,6 @@ mrfunc2<-function(dat) {
 }
 
 mr_table2 <- t(data.frame((sapply(genelist,mrfunc2))))
-# mr_table2$or<-exp(mr_table2$coef)
-# mr_table2$lci<-exp((mr_table2$coef)-((mr_table2$se)*1.96))
-# mr_table2$uci<-exp((mr_table2$coef)+((mr_table2$se)*1.96))
 write.csv(mr_table2, '~/Desktop/bmi-ecg/res/qrsint_results2_fixed.csv')
 
 # Sentitivity analyses 
@@ -785,8 +750,7 @@ rm(list=ls())
 # #
 
 
-
-#####  OUTCOME 4 = pwd #### 
+#####  OUTCOME 3 = pwd #### 
 #load exposures -  all CSVs from IV folder 
 setwd("~/Desktop/bmi-ecg/ivs")    #set wd to where i want to read IV sets from 
 files = list.files(pattern="*.csv")   #make list of all csv names
@@ -819,15 +783,12 @@ data <- data[!duplicated(data$SNP),]
 head(data)
 
 # Separate 'data' file into exposure and outcome sets, and format respective dataframes for MR
-outcomedata<-data[,c("SNP", "pwd_ea", "pwd_nea", "pwd_beta", "pwd_se", "pwd_p", "bmi_chr", "bmi_pos", "bmi_eaf")]
+outcomedata<-data[,c("SNP", "pwd_ea", "pwd_nea", "pwd_beta", "pwd_se", "pwd_p",  "bmi_eaf")]
 outcomedat<-format_data(outcomedata,type="outcome",snp_col = "SNP",
                         beta_col = "pwd_beta",
                         se_col = "pwd_se",
-                        eaf_col = "bmi_eaf",
                         effect_allele_col = "pwd_ea",
-                        other_allele_col = "pwd_nea",
-                        pos_col	="bmi_pos",
-                        chr_col="bmi_chr",pval_col = "pwd_p" )
+                        other_allele_col = "pwd_nea", pval_col = "pwd_p" )
 
 # BMI
 exposuredata<-data[,c("SNP", "bmi_ea", "bmi_nea", "bmi_beta", "bmi_se", "bmi_p", "bmi_chr", "bmi_pos", "bmi_eaf", 'bmi_ss')]
@@ -972,9 +933,6 @@ mrfunc2<-function(dat) {
 }
 
 mr_table2 <- t(data.frame((sapply(genelist,mrfunc2))))
-# mr_table2$or<-exp(mr_table2$coef)
-# mr_table2$lci<-exp((mr_table2$coef)-((mr_table2$se)*1.96))
-# mr_table2$uci<-exp((mr_table2$coef)+((mr_table2$se)*1.96))
 write.csv(mr_table2, '~/Desktop/bmi-ecg/res/pwd_results2.csv')
 
 
@@ -1055,7 +1013,7 @@ rm(list=ls())
 
 
 
-#####  OUTCOME 6 = qtcinterval #### 
+#####  OUTCOME 4 = qtcinterval #### 
 #load exposures -  all CSVs from IV folder 
 setwd("~/Desktop/bmi-ecg/ivs")    #set wd to where i want to read IV sets from 
 files = list.files(pattern="*.csv")   #make list of all csv names
@@ -1297,9 +1255,6 @@ mrfunc2<-function(dat) {
 }
 
 mr_table2 <- t(data.frame((sapply(genelist,mrfunc2))))
-# mr_table2$or<-exp(mr_table2$coef)
-# mr_table2$lci<-exp((mr_table2$coef)-((mr_table2$se)*1.96))
-# mr_table2$uci<-exp((mr_table2$coef)+((mr_table2$se)*1.96))
 write.csv(mr_table2, '~/Desktop/bmi-ecg/res/qtcint_results2_fixed.csv')
 
 # Sentitivity analyses 
@@ -1322,367 +1277,6 @@ write.csv(a, '~/Desktop/bmi-ecg/res/qtcint_results2_egg.csv')
 
 rm(list=ls())
 #
-
-
-
-
-
-
-#### RES FSTAT ####
-#rsq & f-stat
-# r2 = (2*(beta^2)*maf*(1-maf))/((2*(beta^2)*maf*(1-maf))+2*ncase*maf*(1-maf)*(se^2))
-# f-stat = (r2/k)/((1-r2)/(n-k-1))
-
-#load exposures -  all CSVs from IV folder 
-setwd("~/Desktop/bmi-ecg/ivs")    #set wd to where i want to read IV sets from 
-files = list.files(pattern="*.csv")   #make list of all csv names
-data_list = lapply(files, read.csv, header = TRUE)    #apply reead csv to all names
-names(data_list) <- gsub(".csv","",
-                         list.files(full.names = FALSE),
-                         fixed = TRUE)   #make names for GE - withoout the .csv
-invisible(lapply(names(data_list), function(x) assign(x,data_list[[x]],envir=.GlobalEnv)))  #pull imported data out from df list and assign names
-genelist<-ls(Filter(function(x) is(x, "data.frame"), mget(ls()))) #make list with names of all IV sets
-
-rm(files, data_list)
-setwd("~/Desktop/bmi-ecg") #set wd back to project
-
-bmi_iv <- setnames(bmi_iv, old = c("bmi_ea", "bmi_nea", "bmi_beta", "bmi_se", "bmi_p", "bmi_eaf", "bmi_ss"),  
-                   new = c("effect_allele.exposure", "other_allele.exposure", "beta.exposure", "se.exposure", "pval.exposure", "eaf.exposure", "samplesize.exposure"))
-whr_iv <- setnames(whr_iv, old = c("whr_ea", "whr_nea", "whr_beta", "whr_se", "whr_p", "whr_eaf", "whr_ss"),  
-                   new = c("effect_allele.exposure", "other_allele.exposure", "beta.exposure", "se.exposure", "pval.exposure", "eaf.exposure", "samplesize.exposure"))
-heig_iv <- setnames(heig_iv, old = c("heig_ea", "heig_nea", "heig_beta", "heig_se", "heig_p", "heig_eaf", "heig_ss"),  
-                    new = c("effect_allele.exposure", "other_allele.exposure", "beta.exposure", "se.exposure", "pval.exposure", "eaf.exposure", "samplesize.exposure"))
-wblm_iv <- setnames(wblm_iv, old = c("wblm_ea", "wblm_nea", "wblm_beta", "wblm_se", "wblm_p", "wblm_eaf", "wblm_ss"),  
-                    new = c("effect_allele.exposure", "other_allele.exposure", "beta.exposure", "se.exposure", "pval.exposure", "eaf.exposure", "samplesize.exposure"))
-wbfm_iv <- setnames(wbfm_iv, old = c("wbfm_ea", "wbfm_nea", "wbfm_beta", "wbfm_se", "wbfm_p", "wbfm_eaf", "wbfm_ss"),  
-                    new = c("effect_allele.exposure", "other_allele.exposure", "beta.exposure", "se.exposure", "pval.exposure", "eaf.exposure", "samplesize.exposure"))
-weigh_iv <- setnames(weigh_iv, old = c("weigh_ea", "weigh_nea", "weigh_beta", "weigh_se", "weigh_p", "weigh_eaf", "weigh_ss"),  
-                     new = c("effect_allele.exposure", "other_allele.exposure", "beta.exposure", "se.exposure", "pval.exposure", "eaf.exposure", "samplesize.exposure"))
-
-
-clp<-function(dat){
-  dat <- get(dat, envir = .GlobalEnv)
-  dat<-clump_data(dat, clump_r2=0.001, pop="EUR")
-}
-iv_list<- sapply(genelist, clp, simplify = FALSE)
-invisible(lapply(names(iv_list), function(x) assign(x, iv_list[[x]],envir=.GlobalEnv)))
-gene<-ls(pattern = "_iv", mget(ls())) #make list with names of all IV sets
-
-
-#fstat
-fstatfun<-function(dat) {
-  dat <- get(dat, envir = .GlobalEnv)
-  dat$effect_allele_col<-"A"
-  dat$other_allele_col<-"C"
-  exposuredat<-format_data(dat,type="exposure",snp_col = "SNP",
-                           beta_col = "beta.exposure",
-                           se_col = "se.exposure",
-                           pval_col="pval.exposure",
-                           eaf_col = "eaf.exposure",
-                           effect_allele_col = "effect_allele.exposure",
-                           other_allele_col = "other_allele.exposure", 
-                           samplesize_col = "samplesize.exposure", 
-                           phenotype_col =  "exposure")
-  fval<-(dat$beta.exposure/dat$se.exposure)^2
-  n<- dat$samplesize.exposure[1]
-  rsquared<-fval/(n-2+fval)
-  rsquared<-sum(rsquared)
-  k=nrow(dat)
-  fstat=(n-k-1)/k*(rsquared/(1-rsquared))
-  return(fstat)
-}
-test<- mapply(fstatfun, genelist)
-
-#rsq
-rsqf<-function(dat) {
-  dat <- get(dat, envir = .GlobalEnv)
-  dat$effect_allele_col<-"A"
-  dat$other_allele_col<-"C"
-  exposuredat<-format_data(dat,type="exposure",snp_col = "SNP",
-                           beta_col = "beta.exposure",
-                           se_col = "se.exposure",
-                           pval_col="pval.exposure",
-                           eaf_col = "eaf.exposure",
-                           effect_allele_col = "effect_allele.exposure",
-                           other_allele_col = "other_allele.exposure", 
-                           samplesize_col = "samplesize.exposure", 
-                           phenotype_col =  "exposure")
-  
-  fval<-(dat$beta.exposure/dat$se.exposure)^2
-  n<- dat$samplesize.exposure
-  rsquared<-fval/(n-2+fval)
-  rsquared<-sum(rsquared)
-  k=nrow(exposuredat)
-  fstat=(n-k-1)/k*(rsquared/(1-rsquared))
-  return(rsquared)
-}
-test2<- mapply(rsqf, genelist)
-rsqs <- test2*100
-fr <- round(cbind(test, rsqs), 2)
-colnames(fr) <- c("fstat", "rsq%")
-write.csv(fr, "~/Desktop/bmi-ecg/res/fstatsrsq_print.csv")
-##### Forest plot results #####
-
-resprint <- read.csv("res/print_results2.csv")
-resprint$Outcome <- 'PR interval (ms)'
-resqtint <- read.csv("res/qtcint_results2.csv")
-resqtint$Outcome <- 'QT interval (ms)'
-resqrsint <- read.csv("res/qrsint_results2.csv")
-resqrsint$Outcome <- 'QRS interval (ms)'
-respwd <- read.csv("res/pwd_results2.csv")
-respwd$Outcome <- 'P-wave duration (ms)'
-respwtforce <- read.csv("res/pwtforce_results2.csv")
-respwtforce$Outcome <- 'P-wave terminal force'
-
-res <- rbind(respwd, respwtforce)
-res <- rbind(res, resprint)
-res <- rbind(res, resqrsint)
-res <- rbind(res, resqtint)
-setnames(res, old= "X", new = "Exposure")
-res <- res %>% 
-  mutate(Exposure=recode(Exposure, 'bmi_har'='BMI', 'whr_har'='WHR', 'heig_har' = 'Height', 'wbfm_har' = 'Fat mass', 'wblm_har' = 'Fat-free mass', 'weigh_har' = 'Weight'))
-res
-res$lci <- res$b - 1.96* res$se
-res$uci <- res$b + 1.96* res$se
-write.csv(res, "res/all_ivw.csv", row.names = FALSE)
-
-#PWD
-respwd <- filter(res, Outcome == "P-wave duration (ms)")
-respwd$p <- as.numeric(respwd$pval)
-respwd <- respwd[order(respwd$Exposure),]
-
-respwd$beta<-format(round(respwd$b, 2), nsmall = 2)
-respwd$LoCI<-format(round(respwd$lci, 2), nsmall = 2)
-respwd$UoCI<-format(round(respwd$uci, 2) , nsmall = 2)
-respwd$pval<-format(round(respwd$p, 3), nsmall = 3)
-
-
-x <- rep(NA, ncol(respwd))
-respwd <- rbind(x, respwd)
-respwdor<-as.data.frame(respwd[,c("Exposure", "beta", "LoCI", "UoCI", "pval")])
-respwdor$CI<-str_c(respwdor$LoCI, ',', respwdor$UoCI)
-respwdor$txt<-str_c(respwdor$beta, " (", respwdor$CI, ")","
-p=", respwd$pval)
-respwdor$txt[1]<-
-  "Beta coefficient (95% CI)
-     p value"
-respwdor$txt <- gsub("=0.000","<0.001", respwdor$txt, fixed = TRUE)
-respwdor<-as.matrix(respwdor[,c("Exposure", "txt")])
-
-
-respwdplot <- forestplot(
-  labeltext = respwdor,
-  mean = respwd$b, 
-  lower = respwd$lci, upper = respwd$uci, 
-  is.summary = FALSE,
-  graph.pos = 2,
-  clip= c(-4, 10),
-  zero = c(0), 
-  xlog = FALSE,
-  vertices=FALSE,
-  title = "P-wave duration (ms)", 
-  xlab = "Beta coefficient and 95% Confidence interval (CI)", 
-  new_page = TRUE,
-  xticks = c( -4, -2,  0,  2, 4,  6,  8, 10),
-  txt_gp = fpTxtGp(xlab = gpar(cex = 1), ticks = gpar(cex = 0.9)),
-  col = fpColors(lines = c("black"), 
-                 box = c("cornflowerblue")))
-respwdplot
-
-pdf("res/fp/pwd.pdf", width=6, height=5)
-respwdplot
-dev.off()
-
-
-pdf("res/fp/pwd.pdf", width=6, height=5)
-respwdplot
-dev.off()
-
-#PWTF
-respwtforce <- filter(res, Outcome == "P-wave terminal force")
-respwtforce$p <- as.numeric(respwtforce$pval)
-respwtforce <- respwtforce[order(respwtforce$Exposure),]
-
-respwtforce$beta<-format(round(respwtforce$b/100, 2), nsmall = 2)
-respwtforce$LoCI<-format(round(respwtforce$lci/100, 2), nsmall = 2)
-respwtforce$UoCI<-format(round(respwtforce$uci/100, 2) , nsmall = 2)
-respwtforce$pval<-format(round(respwtforce$p, 3), nsmall = 3)
-
-x <- rep(NA, ncol(respwtforce))
-respwtforce <- rbind(x, respwtforce)
-respwtforceor<-as.data.frame(respwtforce[,c("Exposure", "beta", "LoCI", "UoCI", "pval")])
-respwtforceor$CI<-str_c(respwtforceor$LoCI, ',', respwtforceor$UoCI)
-respwtforceor$txt<-str_c(respwtforceor$beta, " (", respwtforceor$CI, ")","
-p=", respwtforce$pval)
-respwtforceor$txt[1]<-
-  "Beta coefficient (95% CI)
-     p value"
-respwtforceor$txt <- gsub("=0.000","<0.001", respwtforceor$txt, fixed = TRUE)
-respwtforceor<-as.matrix(respwtforceor[,c("Exposure", "txt")])
-
-respwtforceplot <- forestplot(
-  labeltext = respwtforceor,
-  mean = respwtforce$b/100, 
-  lower = respwtforce$lci/100, upper = respwtforce$uci/100, 
-  is.summary = FALSE,
-  graph.pos = 2,
-  clip= c(-4, 10),
-  zero = c(0), 
-  xlog = FALSE,
-  vertices=FALSE,
-  title = "P-wave terminal force", 
-  xlab = "Beta coefficient and 95% Confidence interval (CI)
-  (x10^-2)", 
-  new_page = TRUE,
-  xticks = c(  -4, -2,  0,  2, 4,  6,  8, 10),
-  txt_gp = fpTxtGp(xlab = gpar(cex = 1), ticks = gpar(cex = 1)),
-  col = fpColors(lines = c("black"), 
-                 box = c("cadetblue")))
-respwtforceplot
-
-pdf("res/fp/pwtforce.pdf", width=6, height=5)
-respwtforceplot
-dev.off()
-
-#PR interval
-resprint <- filter(res, Outcome == "PR interval (ms)")
-resprint$p <- as.numeric(resprint$pval)
-resprint <- resprint[order(resprint$Exposure),]
-
-resprint$beta<-format(round(resprint$b, 2), nsmall = 2)
-resprint$LoCI<-format(round(resprint$lci, 2), nsmall = 2)
-resprint$UoCI<-format(round(resprint$uci, 2) , nsmall = 2)
-resprint$pval<-format(round(resprint$p, 3), nsmall = 3)
-
-x <- rep(NA, ncol(resprint))
-resprint <- rbind(x, resprint)
-resprintor<-as.data.frame(resprint[,c("Exposure", "beta", "LoCI", "UoCI", "pval")])
-resprintor$CI<-str_c(resprintor$LoCI, ',', resprintor$UoCI)
-resprintor$txt<-str_c(resprintor$beta, " (", resprintor$CI, ")","
-p=", resprint$pval)
-resprintor$txt[1]<-
-  "Beta coefficient (95% CI)
-     p value"
-resprintor$txt <- gsub("=0.000","<0.001", resprintor$txt, fixed = TRUE)
-
-resprintor<-as.matrix(resprintor[,c("Exposure", "txt")])
-
-resprintplot <- forestplot(
-  labeltext = resprintor,
-  mean = resprint$b, 
-  lower = resprint$lci, upper = resprint$uci, 
-  is.summary = FALSE,
-  graph.pos = 2,
-  clip= c(-4, 10),
-  zero = c(0), 
-  xlog = FALSE,
-  vertices=FALSE,
-  title = "PR interval (ms)", 
-  xlab = "Beta coefficient and 95% Confidence interval (CI)", 
-  new_page = TRUE,
-  xticks = c(-4, -2,  0,  2, 4,  6,  8, 10),
-  txt_gp = fpTxtGp(xlab = gpar(cex = 1), ticks = gpar(cex = 1)),
-  col = fpColors(lines = c("black"), 
-                 box = c("cadetblue")))
-resprintplot
-
-pdf("res/fp/print.pdf", width=6, height=5)
-resprintplot
-dev.off()
-
-
-#qrs interval
-resqrsint <- filter(res, Outcome == "QRS interval (ms)")
-resqrsint$p <- as.numeric(resqrsint$pval)
-resqrsint <- resqrsint[order(resqrsint$Exposure),]
-
-resqrsint$beta<-format(round(resqrsint$b, 2), nsmall = 2)
-resqrsint$LoCI<-format(round(resqrsint$lci, 2), nsmall = 2)
-resqrsint$UoCI<-format(round(resqrsint$uci, 2) , nsmall = 2)
-resqrsint$pval<-format(round(resqrsint$p, 3), nsmall = 3)
-
-x <- rep(NA, ncol(resqrsint))
-resqrsint <- rbind(x, resqrsint)
-resqrsintor<-as.data.frame(resqrsint[,c("Exposure", "beta", "LoCI", "UoCI", "pval")])
-resqrsintor$CI<-str_c(resqrsintor$LoCI, ',', resqrsintor$UoCI)
-resqrsintor$txt<-str_c(resqrsintor$beta, " (", resqrsintor$CI, ")","
-p=", resqrsint$pval)
-resqrsintor$txt[1]<-
-  "Beta coefficient (95% CI)
-     p value"
-resqrsintor$txt <- gsub("=0.000","<0.001", resqrsintor$txt, fixed = TRUE)
-resqrsintor<-as.matrix(resqrsintor[,c("Exposure", "txt")])
-
-resqrsintplot <- forestplot(
-  labeltext = resqrsintor,
-  mean = resqrsint$b, 
-  lower = resqrsint$lci, upper = resqrsint$uci, 
-  is.summary = FALSE,
-  graph.pos = 2,
-  clip= c(-4, 10),
-  zero = c(0), 
-  xlog = FALSE,
-  vertices=FALSE,
-  title = "QRS duration (ms)", 
-  xlab = "Beta coefficient and 95% Confidence interval (CI)", 
-  new_page = TRUE,
-  xticks = c( -2,  0,  2, 4,  6,  8, 10),
-  txt_gp = fpTxtGp(xlab = gpar(cex = 1), ticks = gpar(cex = 1)),
-  col = fpColors(lines = c("black"), 
-                 box = c("cyan4")))
-resqrsintplot
-
-pdf("res/fp/qrsint.pdf", width=6, height=5)
-resqrsintplot
-dev.off()
-
-
-#qt interval
-resqtint <- filter(res, Outcome == "QT interval (ms)")
-resqtint$p <- as.numeric(resqtint$pval)
-resqtint <- resqtint[order(resqtint$Exposure),]
-
-resqtint$beta<-format(round(resqtint$b, 2), nsmall = 2)
-resqtint$LoCI<-format(round(resqtint$lci, 2), nsmall = 2)
-resqtint$UoCI<-format(round(resqtint$uci, 2) , nsmall = 2)
-resqtint$pval<-format(round(resqtint$p, 3), nsmall = 3)
-
-x <- rep(NA, ncol(resqtint))
-resqtint <- rbind(x, resqtint)
-resqtintor<-as.data.frame(resqtint[,c("Exposure", "beta", "LoCI", "UoCI", "pval")])
-resqtintor$CI<-str_c(resqtintor$LoCI, ',', resqtintor$UoCI)
-resqtintor$txt<-str_c(resqtintor$beta, " (", resqtintor$CI, ")","
-p=", resqtint$pval)
-resqtintor$txt[1]<-
-  "Beta coefficient (95% CI)
-     p value"
-resqtintor$txt <- gsub("=0.000","<0.001", resqtintor$txt, fixed = TRUE)
-resqtintor<-as.matrix(resqtintor[,c("Exposure", "txt")])
-
-resqtintplot <- forestplot(
-  labeltext = resqtintor,
-  mean = resqtint$b, 
-  lower = resqtint$lci, upper = resqtint$uci, 
-  is.summary = FALSE,
-  graph.pos = 2,
-  clip= c(-4, 10),
-  zero = c(0), 
-  xlog = FALSE,
-  vertices=FALSE,
-  title = "QT interval (ms)", 
-  xlab = "Beta coefficient and 95% Confidence interval (CI)", 
-  new_page = TRUE,
-  xticks = c(-2,  0,  2, 4,  6,  8, 10 ),
-  txt_gp = fpTxtGp(xlab = gpar(cex = 1), ticks = gpar(cex = 1)),
-  col = fpColors(lines = c("black"), 
-                 box = c("blue2")))
-resqtintplot
-
-pdf("res/fp/qtint.pdf", width=6, height=5)
-resqtintplot
-dev.off()
-
-rm(list=ls())
 
 
 #### MVMR PWD ####
@@ -2472,235 +2066,6 @@ write.csv(a, '~/Desktop/bmi-ecg/res/pwtforce_results2_egg.csv')
 # 
 rm(list=ls())
 # #
-
-
-
-
-
-#####  OUTCOME 2 = qtinterval #### 
-#load exposures -  all CSVs from IV folder 
-setwd("~/Desktop/bmi-ecg/ivs")    #set wd to where i want to read IV sets from 
-files = list.files(pattern="*.csv")   #make list of all csv names
-data_list = lapply(files, read.csv, header = TRUE)    #apply reead csv to all names
-names(data_list) <- gsub(".csv","",
-                         list.files(full.names = FALSE),
-                         fixed = TRUE)   #make names for GE - withoout the .csv
-invisible(lapply(names(data_list), function(x) assign(x,data_list[[x]],envir=.GlobalEnv)))  #pull imported data out from df list and assign names
-genelist<-ls(Filter(function(x) is(x, "data.frame"), mget(ls()))) #make list with names of all IV sets
-
-instruments<- merge(bmi_iv, whr_iv[,-1], by="SNP", all=TRUE)
-instruments<- merge(instruments, heig_iv[,-1], by="SNP", all=TRUE)
-instruments<- merge(instruments, wbfm_iv[,-1], by="SNP", all=TRUE)
-instruments<- merge(instruments, wblm_iv[,-1], by="SNP", all=TRUE)
-instruments<- merge(instruments, weigh_iv[,-1], by="SNP", all=TRUE)
-
-rm(files, data_list)
-setwd("~/Desktop/bmi-ecg") #set wd back to project
-#
-#
-# Extract outcome for all IVs - qtint
-qtint <- as.data.frame(fread(("out/qtint-woj.tsv")))
-qtint$qtint_ea<-toupper(qtint$qtint_ea)
-qtint$qtint_nea<-toupper(qtint$qtint_nea)
-colnames(qtint)
-
-# merge with all exposures
-instruments_qtint <- qtint[which(paste(qtint$SNP) %in% paste(instruments$SNP)),]
-data <- merge(instruments, instruments_qtint, by=c("SNP"), all=FALSE)
-data <- data[!duplicated(data$SNP),]
-head(data)
-
-# Separate 'data' file into exposure and outcome sets, and format respective dataframes for MR
-outcomedata<-data[,c("SNP", "qtint_ea", "qtint_nea", "qtint_beta", "qtint_se", "qtint_p","chr", "pos","qtint_eaf", "qtint_ss")]
-outcomedat<-format_data(outcomedata,type="outcome",snp_col = "SNP",
-                        beta_col = "qtint_beta",
-                        se_col = "qtint_se",
-                        eaf_col = "qtint_eaf",
-                        effect_allele_col = "qtint_ea",
-                        other_allele_col = "qtint_nea",
-                        pos_col	="bmi_pos",
-                        chr_col="bmi_chr",pval_col = "qtint_p", 
-                        samplesize_col = "qtint_ss")
-
-# BMI
-exposuredata<-data[,c("SNP", "bmi_ea", "bmi_nea", "bmi_beta", "bmi_se", "bmi_p", "chr", "pos", "bmi_eaf", 'bmi_ss')]
-exposuredat<-format_data(exposuredata,type="exposure",snp_col = "SNP",
-                         beta_col = "bmi_beta",
-                         se_col = "bmi_se",
-                         eaf_col = "bmi_eaf",
-                         effect_allele_col = "bmi_ea",
-                         other_allele_col = "bmi_nea",pos_col	="pos",
-                         chr_col="chr",pval_col="bmi_p", 
-                         samplesize_col = "bmi_ss")
-bmi_har<-harmonise_data(exposuredat, outcomedat, action = 2)
-bmi_har<-bmi_har[which(bmi_har$mr_keep==TRUE),]
-
-# WHR
-exposuredata<-data[,c("SNP", "whr_ea", "whr_nea", "whr_beta", "whr_se", "whr_p","chr", "pos", "whr_eaf", 'whr_ss')]
-exposuredat<-format_data(exposuredata,type="exposure",snp_col = "SNP",
-                         beta_col = "whr_beta",
-                         se_col = "whr_se",
-                         eaf_col = "whr_eaf",
-                         effect_allele_col = "whr_ea",
-                         other_allele_col = "whr_nea",pos_col	="pos",
-                         chr_col="chr",pval_col="whr_p", 
-                         samplesize_col = "whr_ss")
-whr_har<-harmonise_data(exposuredat, outcomedat, action = 2)
-whr_har<-whr_har[which(whr_har$mr_keep==TRUE),]
-
-# Heig
-exposuredata<-data[,c("SNP", "heig_ea", "heig_nea", "heig_beta", "heig_se", "heig_p", "chr", "pos", "heig_eaf", 'heig_ss')]
-exposuredat<-format_data(exposuredata,type="exposure",snp_col = "SNP",
-                         beta_col = "heig_beta",
-                         se_col = "heig_se",
-                         eaf_col = "heig_eaf",
-                         effect_allele_col = "heig_ea",
-                         other_allele_col = "heig_nea",pos_col	="pos",
-                         chr_col="chr",pval_col="heig_p", 
-                         samplesize_col = "heig_ss")
-heig_har<-harmonise_data(exposuredat, outcomedat, action = 2)
-heig_har<-heig_har[which(heig_har$mr_keep==TRUE),]
-
-
-# wbfm
-exposuredata<-data[,c("SNP", "wbfm_ea", "wbfm_nea", "wbfm_beta", "wbfm_se", "wbfm_p", "chr", "pos", "wbfm_eaf", 'wbfm_ss')]
-exposuredat<-format_data(exposuredata,type="exposure",snp_col = "SNP",
-                         beta_col = "wbfm_beta",
-                         se_col = "wbfm_se",
-                         eaf_col = "wbfm_eaf",
-                         effect_allele_col = "wbfm_ea",
-                         other_allele_col = "wbfm_nea",
-                         pval_col="wbfm_p", pos_col	="pos",
-                         chr_col="chr",
-                         samplesize_col = "wbfm_ss")
-wbfm_har<-harmonise_data(exposuredat, outcomedat, action = 2)
-wbfm_har<-wbfm_har[which(wbfm_har$mr_keep==TRUE),]
-
-# wblm
-exposuredata<-data[,c("SNP", "wblm_ea", "wblm_nea", "wblm_beta", "wblm_se", "wblm_p", "chr", "pos", "wblm_eaf", 'wblm_ss')]
-exposuredat<-format_data(exposuredata,type="exposure",snp_col = "SNP",
-                         beta_col = "wblm_beta",
-                         se_col = "wblm_se",
-                         eaf_col = "wblm_eaf",
-                         effect_allele_col = "wblm_ea",
-                         other_allele_col = "wblm_nea",
-                         pval_col="wblm_p", pos_col	="pos",
-                         chr_col="chr",
-                         samplesize_col = "wblm_ss")
-wblm_har<-harmonise_data(exposuredat, outcomedat, action = 2)
-wblm_har<-wblm_har[which(wblm_har$mr_keep==TRUE),]
-
-
-# weigh
-exposuredata<-data[,c("SNP", "weigh_ea", "weigh_nea", "weigh_beta", "weigh_se", "weigh_p", "chr", "pos", "weigh_eaf", 'weigh_ss')]
-exposuredat<-format_data(exposuredata,type="exposure",snp_col = "SNP",
-                         beta_col = "weigh_beta",
-                         se_col = "weigh_se",
-                         eaf_col = "weigh_eaf",
-                         effect_allele_col = "weigh_ea",
-                         other_allele_col = "weigh_nea",
-                         pval_col="weigh_p", pos_col	="pos",
-                         chr_col="chr",
-                         samplesize_col = "weigh_ss")
-weigh_har<-harmonise_data(exposuredat, outcomedat, action = 2)
-weigh_har<-weigh_har[which(weigh_har$mr_keep==TRUE),]
-
-
-rm(exposuredat,exposuredata,outcomedat,outcomedata)
-
-
-# Delete rows with NAs frorm each IV list
-genelist<- gsub("_iv","_har", genelist, fixed = TRUE) #make list with names of all harmonised sets
-
-nas<-function(dat){
-  dat <- get(dat, envir = .GlobalEnv)
-  dat<-na.omit(dat)
-}
-iv_list<- sapply(genelist, nas, simplify = FALSE)
-invisible(lapply(names(iv_list), function(x) assign(x,iv_list[[x]],envir=.GlobalEnv)))
-
-# Clump
-clp<-function(dat){
-  dat <- get(dat, envir = .GlobalEnv)
-  dat<-clump_data(dat, clump_r2=0.001, pop="EUR")
-}
-iv_list<- sapply(genelist, clp, simplify = FALSE)
-invisible(lapply(names(iv_list), function(x) assign(x, iv_list[[x]],envir=.GlobalEnv)))
-
-# Do MR
-mrfunc2<-function(dat) {
-  dat <- get(dat, envir = .GlobalEnv)
-  b<-0
-  se<-0
-  pval<-0
-  n.SNP<-0
-  
-  if(nrow(dat)==1){
-    dat$effect_allele_col<-"A"
-    dat$other_allele_col<-"C"
-    exposuredat<-format_data(dat,type="exposure",snp_col = "SNP",
-                             beta_col = "beta.exposure",
-                             se_col = "se.exposure",
-                             pval_col="pval.exposure",
-                             eaf_col = "eaf.exposure",
-                             effect_allele_col = "effect_allele_col",
-                             other_allele_col = "other_allele_col")
-    
-    
-    outcomedat<-format_data(dat,type="outcome",snp_col = "SNP",
-                            beta_col = "beta.outcome",
-                            se_col = "se.outcome",
-                            pval_col="pval.outcome",
-                            eaf_col = "eaf.exposure",
-                            effect_allele_col = "effect_allele_col",
-                            other_allele_col = "other_allele_col")
-    
-    harmonizeddata<-harmonise_data(exposuredat, outcomedat, action = 2)
-    output<-mr_singlesnp(harmonizeddata,single_method="mr_wald_ratio")
-    b<-output[1,7]
-    se<-output[1,8]
-    pval<-output[1,9]
-    n.SNP<-1
-    
-  }else{
-    output<-TwoSampleMR::mr_ivw(b_exp = dat$beta.exposure, se_exp = dat$se.exposure, b_out = dat$beta.outcome, se_out = dat$se.outcome)
-    b<-unlist(output)[1]
-    se<-unlist(output)[2]
-    pval<-unlist(output)[3]
-    n.SNP<-unlist(output)[4]
-  }
-  
-  outputobj<-list(b,se,pval,n.SNP)
-  return(unlist(outputobj))
-}
-
-mr_table2 <- t(data.frame((sapply(genelist,mrfunc2))))
-# mr_table2$or<-exp(mr_table2$coef)
-# mr_table2$lci<-exp((mr_table2$coef)-((mr_table2$se)*1.96))
-# mr_table2$uci<-exp((mr_table2$coef)+((mr_table2$se)*1.96))
-write.csv(mr_table2, '~/Desktop/bmi-ecg/res/qtint_results2.csv')
-
-# Sentitivity analyses 
-#wm 
-mrfunc2<-function(dat) {
-  dat <- get(dat, envir = .GlobalEnv)
-  mr_weighted_median(b_exp = dat$beta.exposure, se_exp = dat$se.exposure, b_out = dat$beta.outcome, se_out = dat$se.outcome)
-}
-mr_table2 <- as.data.frame((sapply(genelist,mrfunc2)))
-mr_table2<-t(mr_table2)
-write.csv(mr_table2, '~/Desktop/bmi-ecg/res/qtint_results2_wm.csv')
-
-#egger
-mrfunc2<-function(dat) {
-  dat <- get(dat, envir = .GlobalEnv)
-  mr_egger_regression(b_exp = dat$beta.exposure, se_exp = dat$se.exposure, b_out = dat$beta.outcome, se_out = dat$se.outcome)
-}
-a <- (sapply(genelist,mrfunc2))
-write.csv(a, '~/Desktop/bmi-ecg/res/qtint_results2_egg.csv')
-
-rm(list=ls())
-#
-
 
 
 
